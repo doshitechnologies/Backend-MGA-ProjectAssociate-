@@ -3,7 +3,7 @@ const { deleteFileUsings3URL } = require("./uploadController");
 
 const createInteriorData = async (req, res) => {
     try {
-        const data = req.body; // 'req.body' is synchronous, no 'await' needed
+        const data = req.body;
 
         // Create a new instance of InteriorData
         const interiorModel = new InteriorData(data);
@@ -53,7 +53,7 @@ const updateInteriorData = async (req, res) => {
         // Prepare the update data, adding a new timestamp
         const updateData = { ...req.body, updatedAt: new Date() };
 
-        console.log(updateData)
+        console.log("updateData", updateData)
 
         const updatedInteriorData = await InteriorData.findByIdAndUpdate(id, updateData);
 

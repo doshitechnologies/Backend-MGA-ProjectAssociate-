@@ -1,12 +1,12 @@
 // src/routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
-const {deleteFile} = require('../controllers/uploadController')
-const { signup, verify, login, getUsers, forgotPassword, resetPassword ,editUser, deleteUser,forgetEmail} = require('../controllers/authController');
+const { deleteFile, deleteArchitectureFile } = require('../controllers/uploadController')
+const { signup, verify, login, getUsers, forgotPassword, resetPassword, editUser, deleteUser, forgetEmail } = require('../controllers/authController');
 const { signupValidation, loginValidation } = require('../utils/validation');
 const { authenticateMiddleware } = require('../middleware/auth');
-const {uploadFiles,upload} = require('../controllers/uploadController');
-const { uploadArchitecture ,uploads } = require('../controllers/ArchitectureuploadController');
+const { uploadFiles, upload } = require('../controllers/uploadController');
+const { uploadArchitecture, uploads } = require('../controllers/ArchitectureuploadController');
 
 
 // User signup
@@ -19,27 +19,29 @@ router.post('/verify', verify);
 router.post('/login', loginValidation, login);
 
 // Get all users (authenticated)
-router.get('/users', getUsers); 
+router.get('/users', getUsers);
 // Edit users (authenticated)
-router.patch('/users/:id', editUser); 
+router.patch('/users/:id', editUser);
 //delete useer
 router.delete('/users/:id', deleteUser);
 
 // Request password reset
 router.post('/forgot-password', forgotPassword);
 
-router.post("/forgot-email",forgetEmail);
+router.post("/forgot-email", forgetEmail);
 
 // Reset password
 router.post('/reset-password', resetPassword);
 
-router.delete('/users/:id',deleteUser);
+router.delete('/users/:id', deleteUser);
 
-router.delete('/file/:s3Url',deleteFile);
+router.delete('/file/:s3Url', deleteFile);
 
-router.post('/upload',upload.single("file"),uploadFiles);
+// Delete Architecture File
+router.delete('/filearchitecture/:s3Url', deleteArchitectureFile);
 
+router.post('/upload', upload.single("file"), uploadFiles);
 
-router.post('/uploadarchitecture',uploads.single("file"),uploadArchitecture);
+router.post('/uploadarchitecture', uploads.single("file"), uploadArchitecture);
 
 module.exports = router;

@@ -1,57 +1,65 @@
 const mongoose = require("mongoose");
+
 const InteriorDataSchema = new mongoose.Schema({
-  title: {
-    type: String,
-  },
-  clientName: {
-    type: String,
-  },
-  projectType: {
-    type: String,
-  },
-  siteAddress: {
-    type: String,
-  },
-  gstNo: {
-    type: String,
-  },
-  projectHead: {
-    type: String,
-  },
-  leadFirm: { 
-    type: String 
-  },
-  Pan: {
-    type: String,
-  },
-  Aadhar: {
-    type: String,
-  },
-  Pin: {
-    type: String,
-  },
-  email: {
-    type: String,
-  },
-    Presentation_DrawingI: [String],
-      Ceiling: [String],
-      Electrical: [String],
-      Door_Handle: [String],
-      Curtains: [String],
-      Furniture: [String],
-      Laminates: [String],
-      Venner: [String],
-      Hinges: [String],
-     
-      Plumbing: [String],
-      ThreeD_Model: [String],
-      Flooring: [String],
-      Estimate: [String],
-      Bill: [String],
-      Site_Photo: [String],
+  title: { type: String },
+  clientName: { type: String },
+  projectType: { type: String },
+  siteAddress: { type: String },
+  gstNo: { type: String },
+  projectHead: { type: String },
+  leadFirm: { type: String },
+  Pan: { type: String },
+  Aadhar: { type: String },
+  Pin: { type: String },
+  email: { type: String },
+  Presentation_DrawingI: [String],
+  Ceiling_Shop: [String],
+  Ceiling_Ground: [String],
+  Ceiling_First: [String],
+  Ceiling_Second: [String],
+  Ceiling_Third: [String],
+  Ceiling_Fourth: [String],
+  Ceiling_Fifth: [String],
+  Electrical_Shop: [String],
+  Electrical_Ground: [String],
+  Electrical_First: [String],
+  Electrical_Second: [String],
+  Electrical_Third: [String],
+  Electrical_Fourth: [String],
+  Electrical_Fifth: [String],
+  Furniture_Shop: [String],
+  Furniture_Ground: [String],
+  Furniture_First: [String],
+  Furniture_Second: [String],
+  Furniture_Third: [String],
+  Furniture_Fourth: [String],
+  Furniture_Fifth: [String],
+  Plumbing_Shop: [String],
+  Plumbing_Ground: [String],
+  Plumbing_First: [String],
+  Plumbing_Second: [String],
+  Plumbing_Third: [String],
+  Plumbing_Fourth: [String],
+  Plumbing_Fifth: [String],
+  ThreeD_Model: [String],
+  Flooring_Shop: [String],
+  Flooring_Ground: [String],
+  Flooring_First: [String],
+  Flooring_Second: [String],
+  Flooring_Third: [String],
+  Flooring_Fourth: [String],
+  Flooring_Fifth: [String],
+  Door_Handle: [String],
+  Curtains: [String],
+  Laminates: [String],
+  Venner: [String],
+  Hinges: [String],
+  Estimate: [String],
+  Bill: [String],
+  Site_Photo: [String],
 });
+
 InteriorDataSchema.pre("save", async function (next) {
-  const InteriorDataSchema = this;
   next();
 });
 

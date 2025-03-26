@@ -2,7 +2,7 @@
 const env = process.env.NODE_ENV || 'development'; // Default to 'development' if NODE_ENV is not set
 require('dotenv').config({ path: `.env.${env}` });
 const express = require('express');
-const path = require('path'); 
+const path = require('path');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const modalDataRoutes = require('./routes/ArchitectureRoutes');
@@ -11,6 +11,9 @@ const adminRouter = require('./routes/adminRoute')
 const cors = require('cors'); // Import CORS
 
 const app = express();
+
+require('dotenv').config();
+
 
 // Middleware
 app.use(cors()); // Use CORS middleware
