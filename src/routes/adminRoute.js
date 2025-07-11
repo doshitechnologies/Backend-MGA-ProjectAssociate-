@@ -30,15 +30,17 @@ adminRouter.post("/signupadmin",async(req,res)=>{
 adminRouter.post("/signinadmin",async(req,res)=>{
     try {
         const {email,password} = await req.body;
-        console.log(email,password)
+        console.log("this is email and password of the admin trying to login",email,password)
         const finduser =  await Admin.findOne({email:email});
-        console.log(finduser)
+        console.log("This means that finduser has been able to successfully find the user and  ",finduser)
         if(!finduser){
+            console.log("inside not fond user");
             res.status(404).json({message:"user not founded"})
         }
         const comparePassword =  await bcrypt.compare(password,finduser.password);
-        console.log(comparePassword)
+        console.log("the value of compared password ",comparePassword);
         if(!comparePassword){
+            consol
             res.status(401).json({message:"Incorrect password"})
         }
         const adminToken = await jwt.sign({id:JSON.stringify(finduser._id),role:'admin'},process.env.ADMIN_JWT)
