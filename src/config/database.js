@@ -1,7 +1,7 @@
 // src/config/database.js
 const mongoose = require('mongoose');
 
-console.log
+
 
 const connectDB = async () => {
     try {

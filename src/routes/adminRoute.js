@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const Admin = require("../models/AdminModel");
 const jwt = require('jsonwebtoken')
+var cors = require('cors')
+var app = express()
 
 
 const adminRouter = express.Router();
@@ -29,13 +31,13 @@ adminRouter.post("/signupadmin",async(req,res)=>{
 
 adminRouter.post("/signinadmin",async(req,res)=>{
     try {
-        const {email,password} = await req.body;
+        const {email,password} = await req.body; 
         console.log("this is email and password of the admin trying to login",email,password)
         const finduser =  await Admin.findOne({email:email});
         console.log("This means that finduser has been able to successfully find the user and  ",finduser)
         if(!finduser){
             console.log("inside not fond user");
-            res.status(404).json({message:"user not founded"})
+            res.status(404).json({message:"user not founded in the database"})
         }
         const comparePassword =  await bcrypt.compare(password,finduser.password);
         console.log("the value of compared password ",comparePassword);
