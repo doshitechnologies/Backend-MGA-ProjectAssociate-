@@ -11,6 +11,10 @@ const adminRouter = require('./routes/adminRoute')
 const cors = require('cors'); // Import CORS
 
 const app = express();
+var corsOptions = {
+  origin: 'http://example.com',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
 require('dotenv').config();
 
@@ -50,8 +54,8 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/architecture', modalDataRoutes);
+app.use('/api/auth', cors(corsOptions),authRoutes);
+app.use('/api/architecture',cors(corsOptions), modalDataRoutes);
 app.use('/api/interior', interiorRoutes);
 app.use(adminRouter)
 
