@@ -171,27 +171,31 @@ const forgotPassword = async (req, res) => {
 // Login function
 const login = async (req, res) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+        console.log("Inside login function");
+       // const errors = validationResult(req);
+       // console.log("this is the error",errors);
+        // if (!errors.isEmpty()) {
+        //     return res.status(400).json({ errors: errors.array() });
+        // }
 
         const { email, password } = req.body;
-
+        console.log("this is the email and password", email, password);
         const user = await User.findOne({ email });
+        
+        console.log("this is the user found in the database", user);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found in the database ketan' });
         }
 
         if (!user.isVerified) {
             return res.status(401).json({
-                message: 'Please verify your email first'
+                message: 'Please verify your email first ketan'
             });
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(400).json({ message: 'Invalid password' });
+            return res.status(400).json({ message: 'Invalid password ketan' });
         }
 
         const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
@@ -218,7 +222,7 @@ const resetPassword = async (req, res) => {
 
         if (!token || !newPassword) {
             return res.status(400).json({
-                message: 'Token and new password are required'
+                message: 'Token and new password are required ketan'
             });
         }
 
@@ -229,7 +233,7 @@ const resetPassword = async (req, res) => {
 
         if (!user) {
             return res.status(400).json({
-                message: 'Password reset token is invalid or has expired'
+                message: 'Password reset token is invalid or has expired ketan'
             });
         }
 
@@ -242,7 +246,7 @@ const resetPassword = async (req, res) => {
         user.resetPasswordExpires = undefined;
         await user.save();
 
-        res.json({ message: 'Password has been reset successfully' });
+        res.json({ message: 'Password has been reset successfully ketan' });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -256,7 +260,7 @@ const updateUser = async (req, res) => {
         // Find the user by ID
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found ketan' });
         }
 
         // Update fields if provided in request body
