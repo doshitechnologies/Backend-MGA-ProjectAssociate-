@@ -11,36 +11,17 @@ const adminRouter = require('./routes/adminRoute')
 const cors = require('cors'); // Import CORS
 
 const app = express();
-const allowedOrigins = ['https://yourapp.com', 'https://www.yourapp.com'];
+var corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
-app.use((req, res, next) => {
-
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-
-    res.header('Access-Control-Allow-Origin', origin);
-
-  }
-
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-
-    return res.status(200).end();
-
-  }
-
-  next();
-
-});
 require('dotenv').config();
 
 
 // Middleware
 app.use(cors()); // Use CORS middleware
+const allowedOrigins = ['*'];
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -50,8 +31,8 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/architecture', modalDataRoutes);
+app.use('/api/auth', cors(corsOptions),authRoutes);
+app.use('/api/architecture',cors(corsOptions), modalDataRoutes);
 app.use('/api/interior', interiorRoutes);
 app.use(adminRouter)
 
