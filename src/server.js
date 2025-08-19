@@ -1,6 +1,8 @@
 // src/server.js
-const env = process.env.NODE_ENV || "development"; // Default to 'development' if NODE_ENV is not set
-require("dotenv").config({ path: `.env.${env}` });
+
+// Load environment variables FIRST - use default .env file
+require("dotenv").config();
+
 const express = require("express");
 const path = require("path");
 const connectDB = require("./config/database");
@@ -8,21 +10,17 @@ const authRoutes = require("./routes/authRoutes");
 const modalDataRoutes = require("./routes/ArchitectureRoutes");
 const interiorRoutes = require("./routes/InteriorRoutes");
 const adminRouter = require("./routes/adminRoute");
-
-const cors = require("cors"); // Import CORS
+const cors = require("cors");
 
 const app = express();
+
 var corsOptions = {
   origin: "*",
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
-require("dotenv").config();
-
 // Middleware
 app.use(cors()); // Use CORS middleware
-const allowedOrigins = ["*"];
-
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -35,8 +33,6 @@ app.use("/api/auth", cors(corsOptions), authRoutes);
 app.use("/api/architecture", cors(corsOptions), modalDataRoutes);
 app.use("/api/interior", interiorRoutes);
 app.use("/api/admin", cors(corsOptions), adminRouter);
-
-// app.use(adminRouter);
 
 // Function to list all endpoints
 const listEndpoints = (app) => {
@@ -82,10 +78,12 @@ const logEndpoints = () => {
     }
   });
 };
+
 console.log("before connect db Starting server...");
 // Connect to database
 connectDB();
 console.log("after connect db Starting server...");
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -1,60 +1,76 @@
-// src/config/email.js
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
+// Create transporter function that gets called when needed
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: "gmail",
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+};
 
+/**
+ * Send verification email (to Admin)
+ */
 const sendVerificationEmail = async (email, name, phone, verificationCode) => {
-    try {
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: process.env.ADMIN_EMAIL,
-            subject: 'New User Verification Code',
-            text: `New user registration details:
-                \nName: ${name}
-                \nEmail: ${email},
-                \nPhone: ${phone}
-                \nVerification Code: ${verificationCode}`
-        });
-        return true;
-    } catch (error) {
-        console.error('Email sending error:', error);
-        return false;
-    }
+  try {
+    const transporter = createTransporter();
+
+    const info = await transporter.sendMail({
+      from: `"Doshi Technologies" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
+      subject: "New User Verification Code",
+      text: `New user registration details:
+       Name: ${name}
+       Email: ${email}
+       Phone: ${phone}
+       Verification Code: ${verificationCode}`,
+    });
+
+    console.log("Verification email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("Email sending error (verification):", error.message);
+    return false;
+  }
 };
 
-
+/**
+ * Send password reset email (to User)
+ */
 const sendPasswordResetEmail = async (email, resetToken) => {
-    try {
-        const resetLink = `https://www.mga2002.in/resetpassword?token=${resetToken}`;
-        
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email, // Sending directly to user's email
-            subject: 'Password Reset Request',
-            html: `
-                <h2>Password Reset Request</h2>
-                <p>You requested a password reset for your account. Click the link below to reset your password:</p>
-                <a href="${resetLink}">${resetLink}</a>
-                <p>This link will expire in 1 hour.</p>
-                <p>If you didn't request this reset, please ignore this email.</p>
-                <p>For security reasons, please do not share this link with anyone.</p>
-            `
-        });
-        return true;
-    } catch (error) {
-        console.error('Password reset email sending error:', error);
-        return false;
-    }
+  try {
+    const transporter = createTransporter();
+
+    const resetLink = `https://www.mga2002.in/resetpassword?token=${resetToken}`;
+
+    const info = await transporter.sendMail({
+      from: `"Doshi Technologies" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Password Reset Request",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset for your account.</p>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
+        <p>This link will expire in <b>1 hour</b>.</p>
+        <p>If you didn't request this reset, please ignore this email.</p>
+        <hr/>
+        <small>For security reasons, please do not share this link with anyone.</small>
+      `,
+    });
+
+    console.log("Password reset email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("Password reset email sending error:", error.message);
+    return false;
+  }
 };
 
-
-module.exports = { 
-    sendVerificationEmail,
-    sendPasswordResetEmail 
+module.exports = {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
 };
