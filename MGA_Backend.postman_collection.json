@@ -1,0 +1,446 @@
+{
+  "info": {
+    "name": "MGA Backend - Complete API",
+    "description": "Full API collection for MGA Backend. Base URL: http://localhost:5000. Run requests in order within each folder.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",         "value": "http://localhost:5000" },
+    { "key": "user_token",       "value": "" },
+    { "key": "admin_token",      "value": "" },
+    { "key": "user_id",          "value": "" },
+    { "key": "interior_id",      "value": "" },
+    { "key": "architecture_id",  "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "🟢 Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] },
+        "description": "Verify server is running. Expected response: Hello World!"
+      }
+    },
+
+    {
+      "name": "👤 Admin",
+      "item": [
+
+        {
+          "name": "1. Admin Signup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/admin/signupadmin", "host": ["{{base_url}}"], "path": ["api","admin","signupadmin"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@mga.com\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "description": "Creates a new admin account. Run only once. Returns 409 if admin already exists."
+          }
+        },
+
+        {
+          "name": "2. Admin Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.token) {",
+                "  pm.collectionVariables.set('admin_token', json.token);",
+                "  console.log('✅ Admin token saved');",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/admin/signinadmin", "host": ["{{base_url}}"], "path": ["api","admin","signinadmin"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@mga.com\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "description": "Admin login. Token is auto-saved to {{admin_token}} collection variable."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "🔐 Auth - User",
+      "item": [
+
+        {
+          "name": "1. Signup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/signup", "host": ["{{base_url}}"], "path": ["api","auth","signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Karan Rana\",\n  \"email\": \"karan@example.com\",\n  \"dob\": \"1995-06-15\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Test@1234\",\n  \"confirmPassword\": \"Test@1234\",\n  \"address\": \"123 MG Road, Mumbai\"\n}"
+            },
+            "description": "Register a new user.\n\n✅ Required fields: name, email, dob (ISO format), phone, password, confirmPassword (must match password), address.\n\nAfter success, check your email for a 6-digit verification code."
+          }
+        },
+
+        {
+          "name": "2. Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/verify", "host": ["{{base_url}}"], "path": ["api","auth","verify"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"karan@example.com\",\n  \"verificationCode\": \"PASTE_6_DIGIT_CODE_HERE\"\n}"
+            },
+            "description": "Verify user email using the 6-digit code sent to the email address. Must be done before login."
+          }
+        },
+
+        {
+          "name": "3. Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.token) {",
+                "  pm.collectionVariables.set('user_token', json.token);",
+                "  console.log('✅ User token saved');",
+                "}",
+                "if (json.user && json.user.id) {",
+                "  pm.collectionVariables.set('user_id', json.user.id);",
+                "  console.log('✅ User ID saved:', json.user.id);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"karan@example.com\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "description": "Login with verified user credentials.\n\n✅ Auto-saves token to {{user_token}} and user ID to {{user_id}}.\n\nReturns: token, user.id, user.name, user.email"
+          }
+        },
+
+        {
+          "name": "4. Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/users", "host": ["{{base_url}}"], "path": ["api","auth","users"] },
+            "description": "Returns all users. Passwords and verification codes are excluded from response."
+          }
+        },
+
+        {
+          "name": "5. Edit User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api","auth","users","{{user_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Karan Rana Updated\",\n  \"phone\": \"9999988888\",\n  \"address\": \"456 New Street, Delhi\",\n  \"dob\": \"1995-06-15\",\n  \"familyPhoneNumber\": \"9111122222\"\n}"
+            },
+            "description": "Update user details by ID. {{user_id}} is auto-filled after Login.\n\nEditable fields: name, email, dob, phone, familyPhoneNumber, address"
+          }
+        },
+
+        {
+          "name": "6. Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api","auth","users","{{user_id}}"] },
+            "description": "Permanently deletes user by ID. {{user_id}} is auto-filled after Login."
+          }
+        },
+
+        {
+          "name": "7. Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/forgot-password", "host": ["{{base_url}}"], "path": ["api","auth","forgot-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"karan@example.com\"\n}"
+            },
+            "description": "Sends a password reset token to the user's email. Token is valid for 1 hour."
+          }
+        },
+
+        {
+          "name": "8. Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/reset-password", "host": ["{{base_url}}"], "path": ["api","auth","reset-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"PASTE_RESET_TOKEN_FROM_EMAIL_HERE\",\n  \"newPassword\": \"NewPass@5678\"\n}"
+            },
+            "description": "Reset password using the token received in email from Forgot Password request."
+          }
+        },
+
+        {
+          "name": "9. Forgot Email (by Phone)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/forgot-email", "host": ["{{base_url}}"], "path": ["api","auth","forgot-email"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}"
+            },
+            "description": "Returns the email address associated with the given phone number."
+          }
+        },
+
+        {
+          "name": "10. Upload File - Interior (S3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/upload", "host": ["{{base_url}}"], "path": ["api","auth","upload"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select any image or PDF file from your computer"
+                }
+              ]
+            },
+            "description": "Uploads a file to S3 interior bucket (bucket-interior).\n\nReturns: { message, fileUrl } — save the fileUrl to use in Interior project fields."
+          }
+        },
+
+        {
+          "name": "11. Upload File - Architecture (S3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/uploadarchitecture", "host": ["{{base_url}}"], "path": ["api","auth","uploadarchitecture"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select any image or PDF file from your computer"
+                }
+              ]
+            },
+            "description": "Uploads a file to S3 architecture bucket (bucket-architecture).\n\nReturns: { message, fileUrl } — save the fileUrl to use in Architecture project fields."
+          }
+        },
+
+        {
+          "name": "12. Delete Interior File (S3)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/file/PASTE_S3_FILE_URL_HERE", "host": ["{{base_url}}"], "path": ["api","auth","file","PASTE_S3_FILE_URL_HERE"] },
+            "description": "Deletes a file from S3 interior bucket.\n\nReplace PASTE_S3_FILE_URL_HERE with the fileUrl returned from the upload request."
+          }
+        },
+
+        {
+          "name": "13. Delete Architecture File (S3)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/filearchitecture/PASTE_S3_FILE_URL_HERE", "host": ["{{base_url}}"], "path": ["api","auth","filearchitecture","PASTE_S3_FILE_URL_HERE"] },
+            "description": "Deletes a file from S3 architecture bucket.\n\nReplace PASTE_S3_FILE_URL_HERE with the fileUrl returned from the upload request."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "🏠 Interior",
+      "item": [
+
+        {
+          "name": "1. Create Interior",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data && json.data._id) {",
+                "  pm.collectionVariables.set('interior_id', json.data._id);",
+                "  console.log('✅ Interior ID saved:', json.data._id);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/interior/interiors", "host": ["{{base_url}}"], "path": ["api","interior","interiors"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sharma Residence\",\n  \"clientName\": \"Ramesh Sharma\",\n  \"projectType\": \"Residential\",\n  \"siteAddress\": \"Plot 12, Sector 5, Noida\",\n  \"gstNo\": \"07AABCU9603R1ZX\",\n  \"projectHead\": \"Karan Rana\",\n  \"leadFirm\": \"MGA Designs\",\n  \"Pan\": \"ABCDE1234F\",\n  \"Aadhar\": \"1234-5678-9012\",\n  \"Pin\": \"201301\",\n  \"email\": \"ramesh@example.com\",\n  \"Presentation_DrawingI\": [],\n  \"Ceiling_Shop\": [],\n  \"Ceiling_Ground\": [],\n  \"Ceiling_First\": [],\n  \"Ceiling_Second\": [],\n  \"Ceiling_Third\": [],\n  \"Ceiling_Fourth\": [],\n  \"Ceiling_Fifth\": [],\n  \"Electrical_Shop\": [],\n  \"Electrical_Ground\": [],\n  \"Electrical_First\": [],\n  \"Electrical_Second\": [],\n  \"Electrical_Third\": [],\n  \"Electrical_Fourth\": [],\n  \"Electrical_Fifth\": [],\n  \"Furniture_Shop\": [],\n  \"Furniture_Ground\": [],\n  \"Furniture_First\": [],\n  \"Furniture_Second\": [],\n  \"Furniture_Third\": [],\n  \"Furniture_Fourth\": [],\n  \"Furniture_Fifth\": [],\n  \"Plumbing_Shop\": [],\n  \"Plumbing_Ground\": [],\n  \"Plumbing_First\": [],\n  \"Plumbing_Second\": [],\n  \"Plumbing_Third\": [],\n  \"Plumbing_Fourth\": [],\n  \"Plumbing_Fifth\": [],\n  \"ThreeD_Model\": [],\n  \"Flooring_Shop\": [],\n  \"Flooring_Ground\": [],\n  \"Flooring_First\": [],\n  \"Flooring_Second\": [],\n  \"Flooring_Third\": [],\n  \"Flooring_Fourth\": [],\n  \"Flooring_Fifth\": [],\n  \"Door_Handle\": [],\n  \"Curtains\": [],\n  \"Laminates\": [],\n  \"Venner\": [],\n  \"Hinges\": [],\n  \"Estimate\": [],\n  \"Bill\": [],\n  \"Site_Photo\": []\n}"
+            },
+            "description": "Creates a new interior project record.\n\n✅ Auto-saves _id to {{interior_id}}.\n\nAll array fields accept S3 file URLs (strings). Upload files first using Upload File - Interior (S3), then paste the returned fileUrl into the relevant array."
+          }
+        },
+
+        {
+          "name": "2. Get All Interiors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/interior/", "host": ["{{base_url}}"], "path": ["api","interior",""] },
+            "description": "Returns all interior project records from the database."
+          }
+        },
+
+        {
+          "name": "3. Get Interior by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/interior/interior/{{interior_id}}", "host": ["{{base_url}}"], "path": ["api","interior","interior","{{interior_id}}"] },
+            "description": "Returns a single interior record by ID. {{interior_id}} is auto-filled after Create Interior."
+          }
+        },
+
+        {
+          "name": "4. Update Interior",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/interior/update/interiors/{{interior_id}}", "host": ["{{base_url}}"], "path": ["api","interior","update","interiors","{{interior_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sharma Residence - Phase 2\",\n  \"projectType\": \"Commercial\",\n  \"siteAddress\": \"Plot 15, Sector 5, Noida\",\n  \"Site_Photo\": [\"https://your-s3-url.com/photo.jpg\"]\n}"
+            },
+            "description": "Update any fields of an interior project. Only send the fields you want to update.\n\nTo add files: paste S3 fileUrl values into the relevant array fields."
+          }
+        },
+
+        {
+          "name": "5. Delete Interior",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/interior/interiors/{{interior_id}}", "host": ["{{base_url}}"], "path": ["api","interior","interiors","{{interior_id}}"] },
+            "description": "Deletes the interior record AND all associated S3 files. This action is irreversible."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "🏛️ Architecture",
+      "item": [
+
+        {
+          "name": "1. Create Architecture",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data && json.data._id) {",
+                "  pm.collectionVariables.set('architecture_id', json.data._id);",
+                "  console.log('✅ Architecture ID saved:', json.data._id);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/architecture/upload", "host": ["{{base_url}}"], "path": ["api","architecture","upload"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Patel Villa\",\n  \"clientName\": \"Suresh Patel\",\n  \"siteAddress\": \"Survey No. 45, Ahmedabad\",\n  \"gstNo\": \"24AABCU9603R1ZX\",\n  \"projectHead\": \"Karan Rana\",\n  \"leadFirm\": \"MGA Architecture\",\n  \"rccDesignerName\": \"Amit Shah\",\n  \"PAN\": \"ABCDE1234F\",\n  \"Aadhar\": \"9876-5432-1098\",\n  \"Pin\": \"380001\",\n  \"email\": \"suresh@example.com\",\n  \"Area_Calculations\": [],\n  \"Presentation_Drawings\": [],\n  \"Submission_Drawings\": [],\n  \"Center_Line\": [],\n  \"Floor_Plans\": [],\n  \"Sections\": [],\n  \"Elevations\": [],\n  \"Compound_Wall_Details\": [],\n  \"Toilet_Layouts\": [],\n  \"Electric_Layouts\": [],\n  \"Tile_Layouts\": [],\n  \"Grill_Details\": [],\n  \"Railing_Details\": [],\n  \"Column_footing_Drawings\": [],\n  \"Plinth_Beam_Drawings\": [],\n  \"StairCase_Details\": [],\n  \"Slab_Drawings\": [],\n  \"Property_Card\": [],\n  \"Property_Map\": [],\n  \"Sanction_Drawings\": [],\n  \"Revise_Sanction_Drawings\": [],\n  \"Completion_Drawings\": [],\n  \"Completion_Letter\": [],\n  \"Estimate\": [],\n  \"Bills_Documents\": [],\n  \"Consultancy_Fees\": [],\n  \"Site_Photos\": [],\n  \"Other_Documents\": []\n}"
+            },
+            "description": "Creates a new architecture project record.\n\n✅ Auto-saves _id to {{architecture_id}}.\n\nAll array fields accept S3 file URLs (strings). Upload files first using Upload File - Architecture (S3), then paste the returned fileUrl into the relevant array."
+          }
+        },
+
+        {
+          "name": "2. Get All Architecture",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/architecture/data/", "host": ["{{base_url}}"], "path": ["api","architecture","data",""] },
+            "description": "Returns all architecture project records from the database."
+          }
+        },
+
+        {
+          "name": "3. Get Architecture by ID (data route)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/architecture/data/{{architecture_id}}", "host": ["{{base_url}}"], "path": ["api","architecture","data","{{architecture_id}}"] },
+            "description": "Returns a single architecture record by ID using the /data/:id route."
+          }
+        },
+
+        {
+          "name": "4. Get Architecture Modal by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/architecture/modal/{{architecture_id}}", "host": ["{{base_url}}"], "path": ["api","architecture","modal","{{architecture_id}}"] },
+            "description": "Returns a single architecture record by ID using the /modal/:id route."
+          }
+        },
+
+        {
+          "name": "5. Update Architecture",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/architecture/update/{{architecture_id}}", "host": ["{{base_url}}"], "path": ["api","architecture","update","{{architecture_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Patel Villa - Revised\",\n  \"siteAddress\": \"Survey No. 46, Ahmedabad\",\n  \"rccDesignerName\": \"Rajesh Mehta\",\n  \"Site_Photos\": [\"https://your-s3-url.com/photo.jpg\"]\n}"
+            },
+            "description": "Update any fields of an architecture project. Only send the fields you want to update."
+          }
+        },
+
+        {
+          "name": "6. Delete Architecture",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/architecture/upload/{{architecture_id}}", "host": ["{{base_url}}"], "path": ["api","architecture","upload","{{architecture_id}}"] },
+            "description": "Deletes the architecture record AND all associated S3 files. This action is irreversible."
+          }
+        }
+
+      ]
+    }
+
+  ]
+}

@@ -44,7 +44,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   try {
     const transporter = createTransporter();
 
-    const resetLink = `https://www.mga2002.in/resetpassword?token=${resetToken}`;
+    const resetLink = `http://localhost:8000/resetpassword?token=${resetToken}`;
 
     const info = await transporter.sendMail({
       from: `"Doshi Technologies" <${process.env.EMAIL_USER}>`,

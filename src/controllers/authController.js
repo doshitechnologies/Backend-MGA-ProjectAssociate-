@@ -19,6 +19,98 @@ const generateResetToken = () => {
 };
 
 // Signup function
+// const signup = async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({ errors: errors.array() });
+//     }
+
+//     const { name, email, dob, phone, familyPhoneNumber, password, address } =
+//       req.body;
+
+//     // Check if a VERIFIED user already exists with this email/phone
+//     const existingUserEmail = await User.findOne({
+//       email,
+//       deleted: false,
+//       isVerified: true, // Only block if already verified
+//     });
+
+//     const existingUserPhone = await User.findOne({
+//       phone,
+//       deleted: false,
+//       isVerified: true, // Only block if already verified
+//     });
+
+//     if (existingUserEmail) {
+//       return res.status(400).json({ message: "Email already registered" });
+//     }
+//     if (existingUserPhone) {
+//       return res.status(400).json({ message: "Phone already registered" });
+//     }
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const verificationCode = generateVerificationCode();
+
+//     // Log the generated verification code for debugging
+//     console.log(
+//       `Generated verification code for ${email}: ${verificationCode}`,
+//     );
+
+//     // Check if an unverified user already exists with this email
+//     const unverifiedUser = await User.findOne({ email, isVerified: false });
+
+//     let user;
+
+//     if (unverifiedUser) {
+//       // Reuse the existing unverified record — update with fresh data & OTP
+//       unverifiedUser.name = name;
+//       unverifiedUser.dob = dob;
+//       unverifiedUser.phone = phone;
+//       unverifiedUser.password = hashedPassword;
+//       unverifiedUser.address = address;
+//       unverifiedUser.verificationCode = verificationCode;
+//       user = await unverifiedUser.save();
+//     } else {
+//       // Create a new user record
+//       user = new User({
+//         name,
+//         email,
+//         dob,
+//         phone,
+//         // familyPhoneNumber,
+//         password: hashedPassword,
+//         address,
+//         verificationCode,
+//         isVerified: false, // Explicitly set to false
+//       });
+//       await user.save();
+//     }
+
+//     // Attempt to send the verification email
+//     try {
+//       await sendVerificationEmail(email, name, phone, verificationCode);
+//       console.log(`Verification email sent to ${email}`);
+//     } catch (emailError) {
+//       console.error(`Failed to send email: ${emailError.message}`);
+//       // Rollback: delete the user if email fails on fresh signup
+//       if (!unverifiedUser) {
+//         await User.deleteOne({ _id: user._id });
+//       }
+//       return res
+//         .status(500)
+//         .json({ message: "Failed to send verification email" });
+//     }
+
+//     res.status(201).json({
+//       message: "User registered successfully. Awaiting verification.",
+//     });
+//   } catch (error) {
+//     console.error("Error during signup:", error.message);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 const signup = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -26,40 +118,72 @@ const signup = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, email, dob, phone, familyPhoneNumber, password, address } =
-      req.body;
+    const { name, email, dob, phone, password, address } = req.body;
 
-    // Check if email already exists (active users)
-    const existingUserEmail = await User.findOne({ email, deleted: false });
-    const existingUserPhone = await User.findOne({ phone, deleted: false });
-    if (existingUserEmail) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-    if (existingUserPhone) {
-      return res.status(400).json({ message: "Phone already registered" });
+    // ✅ Single query to check both email and phone for verified users
+    const existingUser = await User.findOne({
+      deleted: false,
+      isVerified: true,
+      $or: [{ email }, { phone }],
+    });
+
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+      if (existingUser.phone === phone) {
+        return res.status(400).json({ message: "Phone already registered" });
+      }
     }
 
-    // Hash password
+    // ✅ Hash password only after duplicate check passes
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationCode = generateVerificationCode();
 
-    // Log the generated verification code for debugging
-    console.log(
-      `Generated verification code for ${email}: ${verificationCode}`
-    );
+    // ✅ OTP expiry — expires in 10 minutes
+    const verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    const user = new User({
-      name,
+    // ✅ Remove console.log of OTP in production
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `Generated verification code for ${email}: ${verificationCode}`,
+      );
+    }
+
+    // Check if unverified user already exists
+    const unverifiedUser = await User.findOne({
       email,
-      dob,
-      phone,
-      // familyPhoneNumber,
-      password: hashedPassword,
-      address,
-      verificationCode,
+      isVerified: false,
+      deleted: false,
     });
 
-    await user.save();
+    let user;
+
+    if (unverifiedUser) {
+      // ✅ Reuse existing unverified record — update with fresh data & new OTP
+      unverifiedUser.name = name;
+      unverifiedUser.dob = dob;
+      unverifiedUser.phone = phone;
+      unverifiedUser.password = hashedPassword;
+      unverifiedUser.address = address;
+      unverifiedUser.verificationCode = verificationCode;
+      unverifiedUser.verificationCodeExpiry = verificationCodeExpiry; // ✅ Reset expiry
+      user = await unverifiedUser.save();
+    } else {
+      // Create a new user record
+      user = new User({
+        name,
+        email,
+        dob,
+        phone,
+        password: hashedPassword,
+        address,
+        verificationCode,
+        verificationCodeExpiry, // ✅ Store expiry
+        isVerified: false,
+      });
+      await user.save();
+    }
 
     // Attempt to send the verification email
     try {
@@ -67,6 +191,10 @@ const signup = async (req, res) => {
       console.log(`Verification email sent to ${email}`);
     } catch (emailError) {
       console.error(`Failed to send email: ${emailError.message}`);
+      // ✅ Rollback only for fresh signups
+      if (!unverifiedUser) {
+        await User.deleteOne({ _id: user._id });
+      }
       return res
         .status(500)
         .json({ message: "Failed to send verification email" });
@@ -81,6 +209,56 @@ const signup = async (req, res) => {
   }
 };
 
+// ✅ Improved verify controller
+const verify = async (req, res) => {
+  try {
+    const { email, verificationCode } = req.body;
+
+    if (!email || !verificationCode) {
+      return res
+        .status(400)
+        .json({ message: "Email and verification code are required" });
+    }
+
+    // ✅ Exclude deleted users
+    const user = await User.findOne({ email, deleted: false });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ✅ Check if already verified
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User is already verified" });
+    }
+
+    // ✅ Check OTP expiry
+    if (
+      !user.verificationCodeExpiry ||
+      user.verificationCodeExpiry < new Date()
+    ) {
+      return res.status(400).json({
+        message:
+          "Verification code has expired. Please signup again to get a new code",
+      });
+    }
+
+    // ✅ Check OTP match
+    if (user.verificationCode !== verificationCode) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    // ✅ Mark as verified and clear OTP fields
+    user.isVerified = true;
+    user.verificationCode = undefined;
+    user.verificationCodeExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "User verified successfully" });
+  } catch (error) {
+    console.error("Error during verification:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
 // Get users function
 const getUsers = async (req, res) => {
   try {
@@ -100,7 +278,7 @@ const editUser = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { name, email, dob, phone, familyPhoneNumber, address },
-      { new: true, runValidators: true } // Return the updated document and validate fields
+      { new: true, runValidators: true }, // Return the updated document and validate fields
     );
 
     if (!updatedUser) {
@@ -114,28 +292,28 @@ const editUser = async (req, res) => {
 };
 
 // Verify function
-const verify = async (req, res) => {
-  try {
-    const { email, verificationCode } = req.body;
+// const verify = async (req, res) => {
+//   try {
+//     const { email, verificationCode } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
 
-    if (user.verificationCode !== verificationCode) {
-      return res.status(400).json({ message: "Invalid verification code" });
-    }
+//     if (user.verificationCode !== verificationCode) {
+//       return res.status(400).json({ message: "Invalid verification code" });
+//     }
 
-    user.isVerified = true;
-    user.verificationCode = undefined;
-    await user.save();
+//     user.isVerified = true;
+//     user.verificationCode = undefined;
+//     await user.save();
 
-    res.json({ message: "User verified successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//     res.json({ message: "User verified successfully" });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 // Forgot password function
 const forgotPassword = async (req, res) => {
@@ -177,86 +355,91 @@ const forgotPassword = async (req, res) => {
 // Login function
 const login = async (req, res) => {
   try {
-    console.log("Inside login function");
-    // const errors = validationResult(req);
-    // console.log("this is the error",errors);
-    // if (!errors.isEmpty()) {
-    //     return res.status(400).json({ errors: errors.array() });
-    // }
-
-    const { email, password } = req.body;
-    console.log("this is the email and password", email, password);
-    const user = await User.findOne({ email });
-
-    console.log("this is the user found in the database", user);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found in the database ketan" });
+    // ✅ Uncomment and use validation
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
+    const { email, password } = req.body;
+
+    // ✅ Exclude deleted users
+    const user = await User.findOne({ email, deleted: false });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ✅ Check if user is verified
     if (!user.isVerified) {
       return res.status(401).json({
-        message: "Please verify your email first ketan",
+        message: "Please verify your email before logging in",
       });
     }
 
+    // ✅ Compare password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(400).json({ message: "Invalid password ketan" });
+      return res.status(401).json({ message: "Invalid email or password" });
+      // ✅ 401 not 400, and vague message for security
     }
 
+    // ✅ Sign token
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "24h",
     });
 
-    res.json({
+    res.status(200).json({
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error during login:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// Reset password function
 const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
     if (!token || !newPassword) {
       return res.status(400).json({
-        message: "Token and new password are required ketan",
+        message: "Token and new password are required",
       });
     }
 
+    // ✅ Also exclude deleted users in reset password
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
+      deleted: false, // ✅ added
+      isVerified: true, // ✅ only verified users can reset password
     });
 
     if (!user) {
       return res.status(400).json({
-        message: "Password reset token is invalid or has expired ketan",
+        message: "Password reset token is invalid or has expired",
       });
     }
 
-    // Hash the new password
+    // ✅ Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update user's password and clear reset token fields
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.json({ message: "Password has been reset successfully ketan" });
+    res.status(200).json({ message: "Password has been reset successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error during password reset:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 const updateUser = async (req, res) => {
@@ -316,7 +499,7 @@ const forgetEmail = async (req, res) => {
   try {
     const { phone } = await req.body;
     const finduser = await User.find({ phone: phone }).select(
-      "-password -verificationCode"
+      "-password -verificationCode",
     );
     if (!finduser) {
       res.json({ message: "Email not found" }).status(404);
