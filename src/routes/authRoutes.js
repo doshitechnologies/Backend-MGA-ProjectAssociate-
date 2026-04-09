@@ -1,47 +1,43 @@
 // src/routes/authRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { deleteFile, deleteArchitectureFile } = require('../controllers/uploadController')
-const { signup, verify, login, getUsers, forgotPassword, resetPassword, editUser, deleteUser, forgetEmail } = require('../controllers/authController');
-const { signupValidation, loginValidation } = require('../utils/validation');
-const { authenticateMiddleware } = require('../middleware/auth');
-const { uploadFiles, upload } = require('../controllers/uploadController');
-const { uploadArchitecture, uploads } = require('../controllers/ArchitectureuploadController');
 
+const {
+  signup,
+  login,
+  updateProfile,
+  changePassword,
+} = require("../controllers/authController");
+const { authenticateMiddleware } = require("../middleware/auth");
 
-// User signup
-router.post('/signup', signupValidation, signup);
+// ─── AUTH (public) ────────────────────────────────────────────────────────────
+router.post("/signup", signup);
+router.post("/login", login);
 
-// Email verification
-router.post('/verify', verify);
+// ─── ADMIN PROFILE (protected) ────────────────────────────────────────────────
+router.put("/profile", authenticateMiddleware, updateProfile);
+router.put("/change-password", authenticateMiddleware, changePassword);
 
-// User login
-router.post('/login', loginValidation, login);
+// ─── FILE UPLOADS (protected) ─────────────────────────────────────────────────
+// router.post(
+//   "/upload",
+//   authenticateMiddleware,
+//   upload.single("file"),
+//   uploadFiles,
+// );
+// router.post(
+//   "/uploadarchitecture",
+//   authenticateMiddleware,
+//   uploads.single("file"),
+//   uploadArchitecture,
+// );
 
-// Get all users (authenticated)
-router.get('/users', getUsers);
-// Edit users (authenticated)
-router.patch('/users/:id', editUser);
-//delete useer
-router.delete('/users/:id', deleteUser);
-
-// Request password reset
-router.post('/forgot-password', forgotPassword);
-
-router.post("/forgot-email", forgetEmail);
-
-// Reset password
-router.post('/reset-password', resetPassword);
-
-router.delete('/users/:id', deleteUser);
-
-router.delete('/file/:s3Url', deleteFile);
-
-// Delete Architecture File
-router.delete('/filearchitecture/:s3Url', deleteArchitectureFile);
-
-router.post('/upload', upload.single("file"), uploadFiles);
-
-router.post('/uploadarchitecture', uploads.single("file"), uploadArchitecture);
+// ─── FILE DELETES (protected) ─────────────────────────────────────────────────
+// router.delete("/file/:s3Url", authenticateMiddleware, deleteFile);
+// router.delete(
+//   "/filearchitecture/:s3Url",
+//   authenticateMiddleware,
+//   deleteArchitectureFile,
+// );
 
 module.exports = router;
