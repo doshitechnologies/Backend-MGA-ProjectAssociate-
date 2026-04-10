@@ -2,15 +2,14 @@
 
 // Load environment variables FIRST - use default .env file
 require("dotenv").config();
+
 const express = require("express");
 const path = require("path");
 const connectDB = require("./config/database");
-const category = require("./routes/categoryRoutes");
 const authRoutes = require("./routes/authRoutes");
-const bannerRoutes = require("./routes/BannerRoute");
-// const modalDataRoutes = require("./routes/ArchitectureRoutes");
-// const interiorRoutes = require("./routes/InteriorRoutes");
-
+const modalDataRoutes = require("./routes/ArchitectureRoutes");
+const interiorRoutes = require("./routes/InteriorRoutes");
+const adminRouter = require("./routes/adminRoute");
 const cors = require("cors");
 
 const app = express();
@@ -31,10 +30,9 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", cors(corsOptions), authRoutes);
-// app.use("/api/architecture", cors(corsOptions), modalDataRoutes);
-// app.use("/api/interior", interiorRoutes);
-app.use("/api/categories", cors(corsOptions), category);
-app.use("/api/banners", cors(corsOptions), bannerRoutes);
+app.use("/api/architecture", cors(corsOptions), modalDataRoutes);
+app.use("/api/interior", interiorRoutes);
+app.use("/api/admin", cors(corsOptions), adminRouter);
 
 // Function to list all endpoints
 const listEndpoints = (app) => {
@@ -49,7 +47,7 @@ const listEndpoints = (app) => {
         if (route.route) {
           // Check if route is defined
           const methods = Object.keys(route.route.methods).map((method) =>
-            method.toUpperCase(),
+            method.toUpperCase()
           );
           routes.push({
             path: route.route.path,
@@ -71,11 +69,11 @@ const logEndpoints = () => {
     // Ensure endpoint.methods is an array before calling join
     if (Array.isArray(endpoint.methods)) {
       console.log(
-        `${endpoint.methods.join(", ")} - ${baseURL}${endpoint.path}`,
+        `${endpoint.methods.join(", ")} - ${baseURL}${endpoint.path}`
       );
     } else {
       console.log(
-        `Unexpected structure for endpoint: ${JSON.stringify(endpoint)}`,
+        `Unexpected structure for endpoint: ${JSON.stringify(endpoint)}`
       );
     }
   });
